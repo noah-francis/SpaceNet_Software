@@ -28,9 +28,8 @@ MATLAB function that runs Gibb's Method to produce a velocity vector from three 
 
 'coplanar_val' -- dot product of unit vectors that should be coplanar for Gibb's Method to work properly $[-]$ (closer to zero is better)
 
-#### **read_STK**
+#### **read_STK.m**
 Read and parse an STK ECEF satellite position file (assumes data directory)
-
 
 **_Inputs_**:
 
