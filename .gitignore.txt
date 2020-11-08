@@ -1,1 +1,0 @@
-/TLE\ App\ Library/appResources/TLE_Archive_*.txt
