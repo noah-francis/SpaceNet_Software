@@ -1,7 +1,6 @@
 # SpaceNet Matlab Application
----
 CU Boulder Aerospace Engineering Senior Projects Team SpaceNet software development.
-
+---
 ## Making .mlapp Changes
 1) Make a copy of the latest version of the app
 2) Make changes on copied version of the app on separate branch
