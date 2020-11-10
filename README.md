@@ -1,4 +1,4 @@
-# SpaceNet Matlab Application
+# SpaceNet Software
 CU Boulder Aerospace Engineering Senior Projects Team SpaceNet software development.
 
 ---
