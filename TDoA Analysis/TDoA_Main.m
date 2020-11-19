@@ -16,7 +16,7 @@ It will also use there given conditions as test cases.
 c=299792458; %m/s
 % define error in the time 
 sig_t=500*10^(-9); % error in sec
-sig_r=5; % error in position m
+sig_r=10; % error in position m
 
 LineOfSite=1500*10^3;
 
@@ -90,7 +90,8 @@ ind_ECI=ind_ECI(abs(TMP)<LineOfSite);
 TMP=TMP(abs(TMP)<LineOfSite);
 
 %% MONTE CARLO GONNA WIN All the money
-k=10000;
+k=5000;
+fprintf('Worst Case: \n')
 %Finds the indices of different pass starts and stops
 diffIND=find(abs(diff(ind_ECI))>1)+1;
 % Find the Max range possible  given the line of sight and it's index
@@ -103,8 +104,9 @@ conditional=find(WorstCase==diffIND);
 if ~isnan(conditional)
     %In this case the Worst case is at a start of a fly by
     start=WorstCase;
-    stop=diffIND(conditional+1);
+    stop=diffIND(conditional+1)-1;
    [~,mid]=min(TMP(start:stop));
+   mid=mid+start;
     
 else
     %In this case the Worst case is at a end of a fly by
@@ -112,49 +114,79 @@ else
     start=diffIND(start-1);
     stop=WorstCase;
     [~,mid]=min(TMP(start:stop));
-    
+    mid=mid+start;
 end
-
 [XYZHorizon1_Mean,MAGHorizon1_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(start,:),Rs','First Horizon TDoA Monte Carlo');
 [XYZClose_Mean,MAGClose_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(mid,:),Rs','Closest to LASP TDoA Monte Carlo');
 [XYZHorizon2_Mean,MAGHorizon2_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(stop,:),Rs','Second Horizon TDoA Monte Carlo');
 
-%%
-% c=299792458; %m/s
-% 
-% %cancer way to find de/dWhyGod
-% syms dt1 dt2 dt3 dt4 x y z x1 y1 z1 x2 y2 z2 x3 y3 z3 x4 y4 z4
-% syms tau
-% cTau=sqrt( (x1-x)^2 + (y1-y)^2 + (z1-z)^2);
-% 
-% Norm2=sqrt( (x2-x)^2 + (y2-y)^2 + (z2-z)^2);
-% Norm3=sqrt( (x3-x)^2 + (y3-y)^2 + (z3-z)^2);
-% Norm4=sqrt( (x4-x)^2 + (y4-y)^2 + (z4-z)^2);
-% 
-% y=[0;
-%    (Norm2- cTau)/c;
-%    (Norm3- cTau)/c;
-%    (Norm4- cTau)/c];
-% 
-% e=[     0;
-%    c*dt2+sqrt( (x1-x)^2 + (y1-y)^2 + (z1-z)^2) - sqrt( (x2-x)^2 + (y2-y)^2 + (z2-z)^2);
-%    c*dt3+sqrt( (x1-x)^2 + (y1-y)^2 + (z1-z)^2) - sqrt( (x3-x)^2 + (y3-y)^2 + (z3-z)^2);
-%    c*dt4+sqrt( (x1-x)^2 + (y1-y)^2 + (z1-z)^2) - sqrt( (x4-x)^2 + (y4-y)^2 + (z4-z)^2)];
-% % dedy=gradient(e(1),[dt1, dt2, dt3, dt4])
-% 
-% dedk(1,:)=gradient(e(1),[x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4])';
-% dedk(2,:)=gradient(e(2),[x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4])';
-% dedk(3,:)=gradient(e(3),[x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4])';
-% dedk(4,:)=gradient(e(4),[x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4])';
-% 
-% dedr(1,:)=gradient(e(1),[x, y, z]);
-% dedr(2,:)=gradient(e(2),[x, y, z]);
-% dedr(3,:)=gradient(e(3),[x, y, z]);
-% dedr(4,:)=gradient(e(4),[x, y, z]);
-% 
-% dedr
-% dedk
-% dedy
+XYZ=[XYZHorizon1_Mean;
+    XYZClose_Mean;
+    XYZHorizon2_Mean];
+%% plot Worst Case
+
+figure
+earth_sphere(50,'m')
+hold on;
+plot3(Rs(:,1), Rs(:,2),Rs(:,3),'m.','MarkerSize',7.75); hold on;
+% plot3(shortstak(:,1),shortstak(:,2),shortstak(:,3),'r*');
+% plot3(R_ECEF(1:120,1), R_ECEF(1:120,2),R_ECEF(1:120,3),'r*','MarkerIndices',1:5:120);
+plot3(XYZ(:,1)*10^(3),XYZ(:,2)*10^(3),XYZ(:,3)*10^(3),'ms','MarkerSize',7.75);
+% plot3(X, Y,Z,'ms','MarkerSize',7.75);
+plot3(R_ECEF(start:stop,1),R_ECEF(start:stop,2),R_ECEF(start:stop,3),'c','linewidth',2)
+% quiver3(Rs(1,1),Rs(1,2),Rs(1,3),TMP(1330,1),TMP(1330,2),TMP(1330,3))
+
+legend('Earth','Sensor Positions', 'Target Estimation','Orbit')
+grid on; 
+
+
+
+%% Best Case 
+% close all
+fprintf('Best Case: \n')
+[~,BestCase]=min(TMP);
+
+conditional=find(BestCase<=diffIND,1);
+if isempty(conditional )
+    start=diffIND(end);
+    stop=length(TMP);
+    mid=BestCase;
+end
+
+[XYZHorizon1_Mean_Best,MAGHorizon1_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(start,:),Rs','First Horizon TDoA Monte Carlo');
+[XYZClose_Mean_Best,MAGClose_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(mid,:),Rs','Closest to LASP TDoA Monte Carlo');
+[XYZHorizon2_Mean_Best,MAGHorizon2_std]=MC_TDOA(k,[sig_t,sig_r],R_ECEF(stop,:),Rs','Second Horizon TDoA Monte Carlo');
+
+XYZ_Best=[XYZHorizon1_Mean_Best;
+    XYZClose_Mean_Best;
+    XYZHorizon2_Mean_Best];
+% plot Best Case
+figure
+earth_sphere(50,'m')
+hold on;
+plot3(Rs(:,1), Rs(:,2),Rs(:,3),'m.','MarkerSize',7.75); hold on;
+plot3(XYZ_Best(:,1)*10^(3),XYZ_Best(:,2)*10^(3),XYZ_Best(:,3)*10^(3),'ms','MarkerSize',7.75);
+
+plot3(R_ECEF(start:stop,1),R_ECEF(start:stop,2),R_ECEF(start:stop,3),'c','linewidth',2)
+
+legend('Earth','Sensor Positions', 'Target Estimation','Orbit')
+grid on; 
+
+
+close all
+%% Residual vs flyby
+for i=start:stop
+    [~,err,~,~]=TDOA(R_ECEF(i,:)',Rs',c,sig_r,sig_t);
+    
+    D2LASP(i-start+1)=norm(R_ECEF(i,:)-Rs(1,:));
+    residual(i-start+1)=norm(err)*10^-3;
+    
+end
+figure();
+
+plot(1:length(residual),residual)
+
+
 % 
 % 
 % 
@@ -183,7 +215,7 @@ end
 % plot3(Senr(:,1), Senr(:,2),Senr(:,3),'m.','MarkerSize',7.75); hold on;
 % % plot3(shortstak(:,1),shortstak(:,2),shortstak(:,3),'r*');
 % plot3(X(1), X(2),X(3),'r*','MarkerIndices',1:5:120);
-% plot3(posHolz(1),posHolz(2),posHolz(3),'ms','MarkerSize',7.75,'MarkerIndices',1:5:120);
+% plot3(posHolz(1),posHolz(2),posHolz(3),'ms','MarkerSize',7.75,'MarkerIndices',1:5:120)
 % % plot3(X, Y,Z,'ms','MarkerSize',7.75);
 % %plot3(S_t_Ecef(1:5000,1),S_t_Ecef(1:5000,2),S_t_Ecef(1:5000,3),'c','linewidth',2)
 % % quiver3(Rs(1,1),Rs(1,2),Rs(1,3),TMP(1330,1),TMP(1330,2),TMP(1330,3))
@@ -192,40 +224,40 @@ end
 % grid on; 
 
 %%
-sig_t=linspace(30*10^(-9),420*10^(-9),150);
+% sig_t=linspace(30*10^(-9),420*10^(-9),150);
+% 
+% 
+% for i=1:length(sig_t)
+%    % Find master receiver
+%     [pos1(i,:),err1(i,:),DOP1(i,:),M1(:,:,i)]=TDOA(R_ECEF(1,:)',Rs',c,sig_r,sig_t(i));
+%     [pos2(i,:),err2(i,:),DOP2(i,:),M2(:,:,i)]=TDOA(R_ECEF(17,:)',Rs',c,sig_r,sig_t(i));
+%     err_r1(i)=norm(err1(i,:))*10^(-3);
+%     err_r2(i)=norm(err2(i,:))*10^(-3);
+%     r(i)=norm(R_ECEF(i,:)-Rs(1,:))*10^(-3);
+% end
+% 
+% MeanERR=mean(err_r2)
+% err_STD=std(err_r2)
+% figure
+% plot(sig_t,err_r1)
+% yline(100,'r','linewidth',2)
+% grid on
+% title('Horizon Position Error Estimate vs Timing Accuracy')
+% xlabel('Timing Uncertainty [s]')
+% ylim([0 250])
+% ylabel('Error Vector Magnitude[km]')
+% figure
+% plot(sig_t,err_r2)
+% yline(100,'r','linewidth',2)
+% grid on
+% title('Closest Point Position Error Estimate vs Timing Accuracy')
+% xlabel('Timing Uncertainty [s]')
+% ylim([0 250])
+% ylabel('Error Vector Magnitude [km]')
+% sig_t=420*10^(-9); % error in sec
 
 
-for i=1:length(sig_t)
-   % Find master receiver
-    [pos1(i,:),err1(i,:),DOP1(i,:),M1(:,:,i)]=TDOA(R_ECEF(1,:)',Rs',c,sig_r,sig_t(i));
-    [pos2(i,:),err2(i,:),DOP2(i,:),M2(:,:,i)]=TDOA(R_ECEF(17,:)',Rs',c,sig_r,sig_t(i));
-    err_r1(i)=norm(err1(i,:))*10^(-3);
-    err_r2(i)=norm(err2(i,:))*10^(-3);
-    r(i)=norm(R_ECEF(i,:)-Rs(1,:))*10^(-3);
-end
-
-MeanERR=mean(err_r2)
-err_STD=std(err_r2)
-figure
-plot(sig_t,err_r1)
-yline(100,'r','linewidth',2)
-grid on
-title('Horizon Position Error Estimate vs Timing Accuracy')
-xlabel('Timing Uncertainty [s]')
-ylim([0 250])
-ylabel('Error Vector Magnitude[km]')
-figure
-plot(sig_t,err_r2)
-yline(100,'r','linewidth',2)
-grid on
-title('Closest Point Position Error Estimate vs Timing Accuracy')
-xlabel('Timing Uncertainty [s]')
-ylim([0 250])
-ylabel('Error Vector Magnitude [km]')
-sig_t=420*10^(-9); % error in sec
-
-
-
+clear err
 %%
 COVmat=[sig_r^2*eye(12),  zeros(12,4);
         zeros(4,12),      sig_t^2*eye(4)];
@@ -234,7 +266,7 @@ COVmat=[sig_r^2*eye(12),  zeros(12,4);
 %       lla2ecef([34.1374, -118.1256,250]);
 % 	  lla2ecef([42.3608, -71.0928,30]);
 % 	  lla2ecef([30.2852, -97.7348,158])];
-sig_t=420*10^(-9); 
+% sig_t=420*10^(-9); 
 
  for j=1:length(R(:,1))       
      
@@ -276,10 +308,10 @@ pos_ECI(TRASH,:)=[];
 Sen_ECI(:,:,TRASH)=[];
 
 save('ECI_Sensor_Locations.mat','Sen_ECI')
-
+% 
 save('Covariance_of_Position.mat','PR')
-
-
+% 
+% 
 
 save('TDoA_DOP.mat','DOP')
 
@@ -453,12 +485,13 @@ for k=1:trials
 dummy = repmat(p_T,1,M)-P;
 toa = zeros(M,1);   %includes all toa information
 for ii = 1:M
-    toa(ii) = round(norm(dummy(:,ii))/c,7);    
+    toa(ii) =(norm(dummy(:,ii))/c + err_t(ii))/sig_t;
+    toa(ii)=floor(toa(ii))*sig_t;   
 end
 tdoa = toa-toa(1); %tdoa(1)=[];
 
-P=P+err_r;
-tdoa = tdoa +err_t;
+Perr=P+err_r;
+% tdoa = tdoa +err_t;
 
 
 err_tMeters=[0;c*err_t];
@@ -476,10 +509,10 @@ if method==1
 
 
 for ii=1:M
-   f(ii)=norm(p_T_0-P(:,ii))-norm(p_T_0-P(:,1)); 
-   del_f(ii,1) = (p_T_0(1)-P(1,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(1)-P(1,1))*norm(p_T_0-P(:,1))^-1;
-   del_f(ii,2) = (p_T_0(2)-P(2,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(2)-P(2,1))*norm(p_T_0-P(:,1))^-1;
-   del_f(ii,3) = (p_T_0(3)-P(3,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(3)-P(3,1))*norm(p_T_0-P(:,1))^-1;    
+   f(ii)=norm(p_T_0-Perr(:,ii))-norm(p_T_0-Perr(:,1)); 
+   del_f(ii,1) = (p_T_0(1)-Perr(1,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(1)-Perr(1,1))*norm(p_T_0-Perr(:,1))^-1;
+   del_f(ii,2) = (p_T_0(2)-Perr(2,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(2)-Perr(2,1))*norm(p_T_0-Perr(:,1))^-1;
+   del_f(ii,3) = (p_T_0(3)-Perr(3,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(3)-Perr(3,1))*norm(p_T_0-Perr(:,1))^-1;    
 
 end
 %    del_f(1,:)=(p_T_0 - P(:,1))'*norm(p_T_0 - P(:,1))^(-1) - p_T_0'/norm(p_T_0);

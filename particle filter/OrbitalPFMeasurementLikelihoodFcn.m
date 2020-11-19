@@ -47,8 +47,11 @@ predictedMeasurement=particles(1:3,:);%+c*sig_t * randn(3,size(particles,2));
 % err=mean(err);
 % Assume the ratio of the error between predicted and actual measurements
 % follow a Gaussian distribution with zero mean, variance 0.2
-mu = 0; % mean*
-sigma = c*sig_t*eye(3); % variance
+% sigma=cov(predictedMeasurement');
+sigma = 5*sqrt([13.1379159113235,0.937401777094900,8.57397351437937]);
+sigma=diag(sigma);
+mu =0; % mean*
+% sigma =0.1 *eye(3); % variance
 
 % Use multivariate Gaussian probability density function, calculate
 % likelihood of each particle
@@ -58,11 +61,11 @@ likelihood = zeros(numParticles,1);
 C = det(2 * pi * sigma) ^ (-0.5);
 
 for kk=1:numParticles
-%     v = -(predictedMeasurement(:,kk)'-measurement);
-%    likelihood(kk) =  C *exp(-0.5 * (v / sigma * v') );
-    errorRatio = (predictedMeasurement(kk)-measurement)/predictedMeasurement(kk);
-    v = errorRatio-mu;
-    likelihood(kk) = C * exp(-0.5 * (v / sigma * v') );
+    v = -(predictedMeasurement(:,kk)'-measurement);
+   likelihood(kk) =  C *exp(-0.5 * (v / sigma * v') );
+%     errorRatio = (predictedMeasurement(:,kk)'-measurement)./predictedMeasurement(:,kk)';
+%     v = errorRatio-mu;
+%     likelihood(kk) =C * exp(-0.5 * (v / sigma * v') );
 end
 % likelihood=max(likelihood)-(likelihood-max(likelihood));
 end

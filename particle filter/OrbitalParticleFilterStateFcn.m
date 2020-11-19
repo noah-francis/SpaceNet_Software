@@ -29,19 +29,29 @@ function particles = OrbitalParticleFilterStateFcn(particles,DOP)
 c=299792458; %m/s
 sig_t=420*10^(-9);
 % Time-propagate each particle
+% processNoise=cov(particles');
+% processNoise = sqrt(diag(processNoise));
+processNoise = [sqrt(13.1379159113235),0,0,0,0,0;
+                0,sqrt(0.937401777094900),0,0,0,0;
+                0,0,sqrt(8.57397351437937),0,0,0;
+                0,0,0,sqrt(10.6685845757059),0,0;
+                0,0,0,0,sqrt(21.5169770189651),0;
+                0,0,0,0,0,sqrt(15.3327825860617)];
 %
 % RK4 intergration technique
 dt = 10; % [s] Sample time
 for kk=1:numberOfParticles
     particles(:,kk) = rk4orbit(0,particles(:,kk)*10^(3),10)';
 end
-mean(particles,2)
+mean(particles,2)*10^(-3);
 % Add Gaussian noise with variance 0.025 on each state variable
-processNoise=[150*ones(3,1);1*ones(3,1)];
-% processNoise=cov(particles'*10^(-3));
-% processNoise = sqrt(diag(processNoise));
-processNoise = diag(processNoise);
-particles = particles*10^(-3) + processNoise * randn(size(particles));
+% processNoise=[6.25*ones(3,1);0.5*ones(3,1)];
+% processNoise = diag(processNoise);
+% processNoise = 6.25*eye(6);
+
+% particles = particles*10^(-3) + processNoise * randn(size(particles));\
+
+particles = particles*10^(-3);
 end
 
 function sols = OrbitalODE(t,X)
@@ -49,7 +59,7 @@ function sols = OrbitalODE(t,X)
     R=[X(1) X(2) X(3)];
     V=[X(4) X(5) X(6)];
     % Acceleration based on 
-    A=-mu*R/(norm(R))^3;
+    A=-mu.*R/(norm(R))^3;
     
     sols=[V';A'];
 
@@ -79,6 +89,6 @@ function Xdot = forbit(t,X)
     v = X(4:6);                % Velocity (ms^2)
     dr = v;
     dv = (-mu/(norm(r))^3).*r; % Newton's law of gravity
-    Xdot = [dr; dv];
+    Xdot = [dr; dv]+[1.25*ones(3,1);0.5*ones(3,1)]*10^(3).*randn(6,1);
     
 end

@@ -19,10 +19,10 @@ titleSTR= strcat(titleSTR,'with \sigma_t =',num2str(error(1)*10^9),'ns and \sigm
 for i=1:k
     err_t(i,:)=error(1)*randn(1,M);
     err_r(:,:,i)=error(2)*randn(size(Rs));
-    [XYZ(i,:),err(i,:),DOP(i)]=TDOA(Satellite',Rs,c,err_r(:,:,i),err_t(i,:)',error(1));
+    [XYZ(i,:),err(i,:)]=TDOA(Satellite',Rs,c,err_r(:,:,i),err_t(i,:)',error(1));
 end
-Trash=find(abs(XYZ(:,1))>10^15);
-err_t(Trash,:);
+% Trash=find(abs(XYZ(:,1))>10^10);
+% err_t(Trash,:);
 % err_r(Trash)
 XYZ=XYZ(~isoutlier(XYZ(:,1)),:);
 % % err(
@@ -143,11 +143,11 @@ xline(100,'m','linewidth',2);
 legend('|R_e_s_t-R_T_r_u_e|','100 km Reguirment','location','Northwest')
 xlabel('R_e_r_r_o_r [km]')
 ylabel('Counts')
-if 5*MAGstd_XYZ<100
-    xlim([-150 150])
-else
+% if 5*MAGstd_XYZ<100
+%     xlim([-150 150])
+% else
     xlim([-5*MAGstd_XYZ 5*MAGstd_XYZ])
-end
+% end
 title(titleSTR)
 
 
@@ -158,7 +158,7 @@ fprintf('%0.2f%% of the Position estimates were outside the 100 km requirement \
 
 end
 
-function[XYZ,err,DOP]=TDOA(p_T,P,c,err_r,err_t,sig_t)
+function[XYZ,err]=TDOA(p_T,P,c,err_r,err_t,sig_t)
 % This is based on TDoA file from MATLAB file exchange
 
 method=1;
@@ -166,13 +166,14 @@ method=1;
 
 trials=100;
 M=length(P);
-in_est_error=2000;
+in_est_error=0;
 % Induce Noise into Sensor Position SEED For repeatablility
 % rng(40)
 
 
 k_vec=[P(1:3,1)',P(1:3,2)',P(1:3,3)',P(1:3,4)']';
 
+% makes an initial guess for this case 575 km above LASP 
 guess=P(1:3,1)+ P(1:3,1)/norm(P(1:3,1))*575e3;
 for k=1:trials
 %     err_r=sig_r*randn(size(P));
@@ -191,17 +192,17 @@ toa = zeros(M,1);   %includes all toa information
 for ii = 1:M
     % Calculates time of arrivial and round to the nearest 420*10^(-7)
 %     toa(ii) =norm(dummy(:,ii))/c-mod(norm(dummy(:,ii))/c,sig_t);    
-    toa(ii) =norm(dummy(:,ii))/c/sig_t;
-    toa(ii)=floor(toa(ii))*sig_t;
+    toa(ii) =(norm(dummy(:,ii))/c)/sig_t;
+    toa(ii)=floor(toa(ii))*sig_t + round(err_t(ii),7);
 end
 tdoa = toa-toa(1); %tdoa(1)=[];
 
-P=P+err_r;
-tdoa = tdoa +err_t;
+Perr=P+err_r;
+% tdoa = tdoa +err_t;
 
 
 % err_tMeters=[0;c*err_t];
-Pt=(c*420*10^(-9))^2*eye(4);
+
 
     
 %%% Taylor Series Expansion Solution
@@ -215,10 +216,10 @@ if method==1
 
 
 for ii=1:M
-   f(ii)=norm(p_T_0-P(:,ii))-norm(p_T_0-P(:,1)); 
-   del_f(ii,1) = (p_T_0(1)-P(1,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(1)-P(1,1))*norm(p_T_0-P(:,1))^-1;
-   del_f(ii,2) = (p_T_0(2)-P(2,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(2)-P(2,1))*norm(p_T_0-P(:,1))^-1;
-   del_f(ii,3) = (p_T_0(3)-P(3,ii))*norm(p_T_0-P(:,ii))^-1 - (p_T_0(3)-P(3,1))*norm(p_T_0-P(:,1))^-1;    
+   f(ii)=norm(p_T_0-Perr(:,ii))-norm(p_T_0-Perr(:,1)); 
+   del_f(ii,1) = (p_T_0(1)-Perr(1,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(1)-Perr(1,1))*norm(p_T_0-Perr(:,1))^-1;
+   del_f(ii,2) = (p_T_0(2)-Perr(2,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(2)-Perr(2,1))*norm(p_T_0-Perr(:,1))^-1;
+   del_f(ii,3) = (p_T_0(3)-Perr(3,ii))*norm(p_T_0-Perr(:,ii))^-1 - (p_T_0(3)-Perr(3,1))*norm(p_T_0-Perr(:,1))^-1;    
 
 end
 %    del_f(1,:)=(p_T_0 - P(:,1))'*norm(p_T_0 - P(:,1))^(-1) - p_T_0'/norm(p_T_0);
@@ -245,35 +246,8 @@ P=P-err_r;
 % rmse(k) = norm(p_T-X)^2;
 end
 
-   
-% f=[0;f];
-% df=gradient(f);
-% dy=c*gradient([0;tdoa]);
-% dk=gradient(k_vec);
-% dr=gradient([0;p_T]);
 
 
-% tdoa=[0;tdoa];
-
-% dfdr=[0,0,0,0;
-%        zeros(3,1),df./dr'];
-% dfdy=[0,0,0,0;
-%        zeros(3,1),df./dy'];
-% dfdk=[zeros(1,12);
-%        zeros(3,1),df./dk'];
-
-%    dfdr=df./dr';
-%    dfdy=df./dy';
-%    dfdk=df./dk';
-
-H=1/c*[ (p_T_0 - P(:,1))'*norm(p_T_0 - P(:,1))^(-1) - p_T_0'/norm(p_T_0);
-    (p_T_0 - P(:,2))'*norm(p_T_0 - P(:,2))^(-1) - p_T_0'/norm(p_T_0);
-    (p_T_0 - P(:,3))'*norm(p_T_0 - P(:,3))^(-1) - p_T_0'/norm(p_T_0);
-    (p_T_0 - P(:,4))'*norm(p_T_0 - P(:,4))^(-1) - p_T_0'/norm(p_T_0)];
-
-% M_mat=Covariace4TDoA(tdoa,k_vec,X,420*10^(-9));
-
-DOP=sqrt(trace(pinv(H'*pinv(Pt)*H)));
 XYZ=X;
 err=p_T-X(1:3);
 % if norm(err)>1e6
