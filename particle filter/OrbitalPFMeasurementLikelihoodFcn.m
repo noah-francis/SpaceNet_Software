@@ -1,4 +1,4 @@
-function likelihood = OrbitalPFMeasurementLikelihoodFcn(particles,measurement,k)
+function likelihood = OrbitalPFMeasurementLikelihoodFcn(particles,measurement)
 % vdpExamplePFMeasurementLikelihoodFcn Example measurement likelihood function
 %
 % The measurement is the first state.
@@ -51,7 +51,7 @@ predictedMeasurement=particles(1:3,:);%+c*sig_t * randn(3,size(particles,2));
 sigma = 5*sqrt([13.1379159113235,0.937401777094900,8.57397351437937]);
 sigma=diag(sigma);
 mu =0; % mean*
-% sigma =0.1 *eye(3); % variance
+sigma =100 *eye(3); % variance
 
 % Use multivariate Gaussian probability density function, calculate
 % likelihood of each particle
@@ -68,6 +68,7 @@ for kk=1:numParticles
 %     likelihood(kk) =C * exp(-0.5 * (v / sigma * v') );
 end
 % likelihood=max(likelihood)-(likelihood-max(likelihood));
+likelihood = likelihood / sum(likelihood);
 end
 
 function[XYZ,err]=TDOA(p_T,P,c,sig_r,sig_t)

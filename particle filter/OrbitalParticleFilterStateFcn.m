@@ -41,25 +41,25 @@ processNoise = [sqrt(13.1379159113235),0,0,0,0,0;
 % RK4 intergration technique
 dt = 10; % [s] Sample time
 for kk=1:numberOfParticles
-    particles(:,kk) = rk4orbit(0,particles(:,kk)*10^(3),10)';
+    particles(:,kk) = RK4(0,particles(:,kk),dt,@OrbitalODE)';
 end
-mean(particles,2)*10^(-3);
+mean(particles,2);
 % Add Gaussian noise with variance 0.025 on each state variable
 % processNoise=[6.25*ones(3,1);0.5*ones(3,1)];
 % processNoise = diag(processNoise);
-% processNoise = 6.25*eye(6);
+processNoise = .75*eye(6);
 
-% particles = particles*10^(-3) + processNoise * randn(size(particles));\
+particles = particles + processNoise * randn(size(particles));
 
-particles = particles*10^(-3);
+% particles = particles*10^(-3);
 end
 
 function sols = OrbitalODE(t,X)
-    mu = 3.986004418*10^14;
+    mu = 3.986004418*10^5;
     R=[X(1) X(2) X(3)];
     V=[X(4) X(5) X(6)];
     % Acceleration based on 
-    A=-mu.*R/(norm(R))^3;
+    A=(-mu/(norm(R))^3) *R;
     
     sols=[V';A'];
 
@@ -89,6 +89,6 @@ function Xdot = forbit(t,X)
     v = X(4:6);                % Velocity (ms^2)
     dr = v;
     dv = (-mu/(norm(r))^3).*r; % Newton's law of gravity
-    Xdot = [dr; dv]+[1.25*ones(3,1);0.5*ones(3,1)]*10^(3).*randn(6,1);
+    Xdot = [dr; dv];%+[1.5*ones(3,1);0.5*ones(3,1)]*10^(3).*randn(6,1);
     
 end

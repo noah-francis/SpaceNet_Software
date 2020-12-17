@@ -37,7 +37,7 @@ sig_r=ECI_Tdoa(:,14);%*10^3;
 % yMeas=R_TrueMeas;
 
 
-rng(1); % Fix the random number generator for reproducible results
+% rng(1); % Fix the random number generator for reproducible results
 %Add process Noise to True state?
 % xTrue = xTrue; %+ 0.1^2 * randn(length(timeVector),2);
 
@@ -79,11 +79,11 @@ V_CHEAT=[V_ECI-3*Vstd,V_ECI+3*Vstd];
 Initial=[yMeas(1,:)';vTrueMeas(1,:)'];
 pf = particleFilter(@OrbitalParticleFilterStateFcn,@OrbitalPFMeasurementLikelihoodFcn);
 initialize(pf, 5000,[R_Init;V_CHEAT]);
-
+pf.ResamplingPolicy.MinEffectiveParticleRatio=0.20;
 %% Estimate
-vidfile = VideoWriter('OrbitalparticlesGoZoom.mp4','MPEG-4');
-vidfile.FrameRate=3;
-open(vidfile)
+% vidfile = VideoWriter('OrbitalparticlesGoZoom.mp4','MPEG-4');
+% vidfile.FrameRate=3;
+% open(vidfile)
 
 
 xCorrectedPF = zeros(size(xTrueMeas));
@@ -123,15 +123,15 @@ title('Zoomed in with True Position at the Origin')
 
 drawnow
 hold off;
-im=getframe(gcf);
-writeVideo(vidfile, im)
+% im=getframe(gcf);
+% writeVideo(vidfile, im)
 
 timeVector=linspace(0,330,31);
 for k=1:31
     % Use measurement y[k] to correct the particles for time k
     [~,tmp] = getStateEstimate(pf);
     tmp=sqrt(diag(tmp));
-    xCorrectedPF(k,:) = correct(pf,yMeas(k,:),k); % Filter updates and stores Particles[k|k], Weights[k|k]
+    xCorrectedPF(k,:) = correct(pf,yMeas(k,:)); % Filter updates and stores Particles[k|k], Weights[k|k]
     
 %      xCorrectedPF(k,:) = correct(pf,X_TrueMeas(k,1:3)); % Filter updates and stores Particles[k|k], Weights[k|k]
     
@@ -180,11 +180,11 @@ for k=1:31
 
     drawnow
     hold off;
-        im=getframe(gcf);
-        writeVideo(vidfile, im);
-    predict(pf,DOP(k)); % Filter updates and stores Particles[k+1|k]
+%         im=getframe(gcf);
+%         writeVideo(vidfile, im);
+    predict(pf); % Filter updates and stores Particles[k+1|k]
 end
-close(vidfile)
+% close(vidfile)
 %% Plot
 figure();
 sgtitle('Position Measurement and predicitions')
@@ -259,14 +259,17 @@ figure
 sgtitle('Position Residuals vs time')
 subplot(3,1,1)
 plot(timeVector,xTrueMeas(1:k,1)-xCorrectedPF(1:k,1));
+grid on
 
 ylabel('R_x [km]')
 subplot(3,1,2)
 plot(timeVector,xTrueMeas(1:k,2)-xCorrectedPF(1:k,2));
-
+grid on
 ylabel('R_y [km]')
+
 subplot(3,1,3)
 plot(timeVector,xTrueMeas(1:k,3)-xCorrectedPF(1:k,3));
+grid on
 xlabel('Time [s]')
 ylabel('R_z [km]')
 
@@ -276,15 +279,16 @@ figure
 sgtitle('Velocity Residuals vs time')
 subplot(3,1,1)
 plot(timeVector,xTrueMeas(1:k,4)-xCorrectedPF(1:k,4));
-
+grid on
 ylabel('$\dot{R_x}$ [km/s]', 'Interpreter','latex')
 
 subplot(3,1,2)
 plot(timeVector,xTrueMeas(1:k,5)-xCorrectedPF(1:k,5));
-
+grid on
 ylabel('$\dot{ R_y }$ [km/s]', 'Interpreter','latex')
 subplot(3,1,3)
 plot(timeVector,xTrueMeas(1:k,6)-xCorrectedPF(1:k,6));
+grid on
 xlabel('Time [s]')
 ylabel('$\dot{R_x}$ [km/s]', 'Interpreter','latex')
 %% Orbital propagtion to compare outputs

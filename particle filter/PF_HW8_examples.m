@@ -39,7 +39,7 @@ titlestr=strcat('Iteration=',num2str(0));
 title(titlestr)
 xlim([-2 2])
 ylim([-2 2])
-legend('Particles','Expected state','Y_m_e_a_s','X_true')
+legend('Particles','Expected state','Y_m_e_a_s','X_t_r_u_e')
 drawnow
 hold off;
 % im=getframe(gcf);

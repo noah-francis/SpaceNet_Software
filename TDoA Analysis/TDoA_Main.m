@@ -48,8 +48,8 @@ S_t_Ecef=RSatECEF;
 % Get sensor locations on earth center fixed and adds error
 Rs=[lla2ecef([40.00888, -105.24774,1612]);
     lla2ecef([40.935583, -105.380917,1868]);
-% 	lla2ecef([39.95121, -106.34978,2331]);
-	lla2ecef([39.35773, -104.58592,1989]);
+	lla2ecef([39.95121, -106.34978,2331]);
+% 	lla2ecef([39.35773, -104.58592,1989]);
     lla2ecef([38.24047, -104.57511,2000])
 %     lla2ecef([39.629142, -104.796563,1989])
     ];
@@ -90,8 +90,8 @@ ind_ECI=ind_ECI(abs(TMP)<LineOfSite);
 TMP=TMP(abs(TMP)<LineOfSite);
 
 %% MONTE CARLO GONNA WIN All the money
-k=5000;
-fprintf('Worst Case: \n')
+k=10000;
+fprintf('Worst Case: sig_t= %f ns sig_r= %f m\n',sig_t*10^9,sig_r)
 %Finds the indices of different pass starts and stops
 diffIND=find(abs(diff(ind_ECI))>1)+1;
 % Find the Max range possible  given the line of sight and it's index
@@ -143,7 +143,7 @@ grid on;
 
 %% Best Case 
 % close all
-fprintf('Best Case: \n')
+fprintf('Best Case: sig_t= %f ns sig_r= %f m\n',sig_t*10^9,sig_r)
 [~,BestCase]=min(TMP);
 
 conditional=find(BestCase<=diffIND,1);
