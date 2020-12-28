@@ -2,6 +2,9 @@
 %   distribution of directions"
 % https://stackoverflow.com/a/9751925/14382550
 
+clear all
+clc
+
 % generate same plot from post (uniform spread of directions of magnitude 1)
 figure(1)
 v = randn(1000, 3); % normal distribution of coordinates
@@ -15,7 +18,7 @@ v = randn(1000, 3); % normal distribution of coordinates
 v = bsxfun(@rdivide, v, sqrt(sum(v.^2, 2))); % uniform distribution of directions
 
 err_mag_UNIFORM = 100 * rand(1000, 1); 
-err_mag_NORMAL = 100 * randn(1000, 1);
+err_mag_NORMAL = (100/3) * randn(1000, 1);
 
 % err_mag = err_mag_UNIFORM;
 err_mag = err_mag_NORMAL;
